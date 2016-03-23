@@ -19,7 +19,7 @@ const gotoFields greenSideTacticOnePositions[TACTIC_ONE_POSITION_COUNT] =
 /*************************************************************************************************************************************************************************************
 																				ZUTA STRANA
 *************************************************************************************************************************************************************************************/
-void yellowSide(void)
+void greenSide(void)
 {
 	position startingPosition;
 	unsigned char currentPosition = 0, nextPosition = 0, odometryStatus;

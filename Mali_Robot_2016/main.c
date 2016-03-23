@@ -24,7 +24,14 @@ int main(void)
 	_delay_ms(100);
     while (1) 
     {
-		purpleSide();
+		if(sidesSwitch() == 0)
+		{
+			purpleSide();			
+		}
+		else{
+			greenSide();
+		}
+
     }
 }
 
