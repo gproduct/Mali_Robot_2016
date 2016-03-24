@@ -16,35 +16,36 @@
 #define FORWARD						1
 #define BACKWARD					-1
 
-typedef struct
+struct odometry_position
 {
-	signed int x;
-	signed int y;
-	signed int angle;
-}position;
+	int16_t x;
+	int16_t y;
+	int16_t angle;
+	int8_t  state;
+};
 
-typedef enum
+enum odometry_states
 {
 	IDLE = 'I',
 	MOVING = 'M',
 	ROTATING = 'R',
 	STUCK = 'S',
 	ERROR = 'E'
-}states;
+};
 
 
 // callback za odometriju vraca sledece vrednosti:
 // 0- nista se ne desava, ostani u odometrijskoj funkciji
 // 1- zelis da ispadnes iz funkcije, stop se realizuje ili u callbacku ili posle ispada, vraca ODOMETRY_FAIL
 // 2- zelis da ispadnes iz funkcije, stop se realizuje kako hoces, vraca ODOMETRY_CALLBACK_RETURN
-char stop(char type);
-char moveOnDirection(int distance, unsigned char speed, char (*callback)(unsigned long startTime));
-char gotoXY(position coordinates, unsigned char speed, signed char direction, char (*callback)(unsigned long startTime));
-char setPosition(position coordinates);
-char rotateFor(int angle,unsigned char speed, char (*callback)(unsigned long startTime));
-char setAngle(int angle, unsigned char speed, char (*callback)(unsigned long startTime));
-char getState(void);
-position getPosition(void);
+void	odometry_stop(uint8_t type);
+uint8_t odometry_move_straight(int16_t distance, uint8_t speed, char (*callback)(uint32_t startTime));
+char	gotoXY(struct odometry_position* position, uint8_t speed, int8_t direction, char (*callback)(uint32_t startTime));
+void	setPosition(struct odometry_position* position);
+char	rotateFor(int16_t angle,uint8_t speed, char (*callback)(uint32_t startTime));
+char	setAngle(int16_t angle, uint8_t char speed, char (*callback)(uint32_t startTime));
+char	getState(void);
+
 
 
 

@@ -6,21 +6,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "fat.h"
 #include "actuators.h"
 
-#define _MMIO_BYTE(mem_addr) (*(volatile uint8_t *)(mem_addr))
 
-struct gpio
-{
-	volatile unsigned char *baseAddress;
-	volatile unsigned char pinPosition;
-	volatile unsigned char buffer[3];
-};
-
-typedef struct gpio GPIOData;
-
-static volatile GPIOData *gpios[MAX_INPUTS];
 static volatile unsigned char inputsNumber = 0;
 static volatile unsigned long systemTime;
 static volatile unsigned char matchStarted = 0;
@@ -28,58 +16,30 @@ static volatile unsigned char matchStarted = 0;
 unsigned int received = 0;
 
 
-
-unsigned char GPIO_PinRegister(volatile unsigned char *baseAddress, unsigned char pin)
+void gpio_init(uint8_t pin, uint8_t direction)
 {
-	if(inputsNumber >= MAX_INPUTS)
-		return 0;
+	uint8_t port = 1 + pin / 8;
+	pin = pin % 8;
+	if(direction == 1)
+	{
+		*(volatile uint32_t*)(0x21 + 3 *  (port - 1)) |= (1 << pin);
+		*(volatile uint32_t*)(0x22 + 3 *  (port - 1)) &= ~(1 << pin);
+	}
+	else
+		*(volatile uint32_t*)(0x21 + 3 *  (port - 1)) &= ~(1 << pin);
 
-	unsigned char i;
-
-	gpios[inputsNumber] = (GPIOData *)malloc(sizeof(GPIOData));
-	if(gpios[inputsNumber] == NULL)
-		return -1;
-
-	gpios[inputsNumber]->baseAddress = baseAddress;
-	gpios[inputsNumber]->pinPosition = pin;
-	for(i = 0; i < 3; i++)
-		gpios[inputsNumber]->buffer[i] = 0;
-
-	/*_MMIO_BYTE(baseAddress - 1) &= (0 << pin);
-	_MMIO_BYTE(baseAddress) &= (0 << pin);*/
-	_MMIO_BYTE(baseAddress - 1) &= ~(1 << pin);
-	_MMIO_BYTE(baseAddress) |= (1 << pin);
-
-	i = inputsNumber;
-	inputsNumber++;
-
-	return i;
 }
 
-unsigned char GPIO_PinRead(unsigned char pinHandler)
+void gpio_set(uint8_t pin, uint8_t value)
 {
-	return ( (gpios[pinHandler]->buffer[0]) & (gpios[pinHandler]->buffer[1]) & (gpios[pinHandler]->buffer[2]) );
-}
-
-unsigned char GPIO_ReadFromRegister(unsigned char pinHandler)
-{
-	unsigned char state = 0;
-
-	state = ((_MMIO_BYTE(gpios[pinHandler]->baseAddress - 2)) >> (gpios[pinHandler]->pinPosition)) & 0x01;
-
-	return state;
-}
-
-void fillDebaunsingData(void)
-{
-	unsigned char i;
-	static char j = 0;
-
-	if(++j >= 3)
-		j = 0;
-
-	for(i = 0; i < inputsNumber; ++i)
-		gpios[i]->buffer[j] = GPIO_ReadFromRegister(i);
+	uint8_t port = 1 + pin / 8;
+	pin = pin % 8;
+	
+	uint8_t temp = *(volatile uint32_t*)(0x20 + 3 * (port - 1));
+	if(value != 0)
+		*(volatile uint32_t*)(0x22 + 3 * (port - 1)) = temp | (1 << pin);
+	else
+		*(volatile uint32_t*)(0x22 + 3 * (port - 1)) = temp & ~(1 << pin);
 }
 
 void Timer_Init(unsigned int freq)
